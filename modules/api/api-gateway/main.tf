@@ -24,6 +24,17 @@ resource "aws_api_gateway_method" "get_jwks" {
   http_method   = "GET"
 }
 
+resource "aws_api_gateway_method_response" "get_jwks_response_200" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.jwks.id
+  http_method = aws_api_gateway_method.get_jwks.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
+}
+
 data "aws_iam_policy_document" "assume_role" {
   statement {
     effect = "Allow"
@@ -68,6 +79,10 @@ resource "aws_api_gateway_integration_response" "get_jwks_integration_response" 
   http_method = aws_api_gateway_method.get_jwks.http_method
   status_code = "200"
   depends_on = [aws_api_gateway_integration.get_jwks_integration]
+
+  response_templates = {
+    "application/json" = ""
+  }
 }
 
 resource "aws_api_gateway_resource" "default" {
@@ -81,6 +96,17 @@ resource "aws_api_gateway_method" "default" {
   resource_id   = aws_api_gateway_resource.default.id
   authorization = "NONE"
   http_method   = "ANY"
+}
+
+resource "aws_api_gateway_method_response" "default_response_200" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.default.id
+  http_method = aws_api_gateway_method.default.http_method
+  status_code = "200"
+
+  response_models = {
+    "application/json" = "Empty"
+  }
 }
 
 resource "aws_api_gateway_integration" "default" {
