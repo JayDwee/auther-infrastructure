@@ -51,12 +51,21 @@ resource "aws_iam_role_policy_attachment" "execution_role_attach" {
   policy_arn = aws_iam_policy.cloudwatch_readwrite.arn
 }
 
+data "archive_file" "empty_zip" {
+  type = "zip"
+  output_path = "${path.module}/auther.zip"
+
+  source {
+    content = "auther"
+    filename = "auther.txt"
+  }
+}
+
 resource "aws_lambda_function" "lambda_function" {
   function_name = "auther-${var.deployment_env}-lambda-function"
   role          = aws_iam_role.lambda_role.arn
   handler       = "main"
-  s3_bucket     = var.s3_bucket_name
-  s3_key        = "auther.zip"
+  filename = data.archive_file.empty_zip.output_path
 
   runtime = "provided.al2023"
 

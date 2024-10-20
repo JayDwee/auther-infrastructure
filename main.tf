@@ -30,7 +30,6 @@ module "s3" {
 module "lambda" {
   source         = "./modules/compute/lambda"
   deployment_env = var.deployment_env
-  s3_bucket_name = module.s3.s3_bucket_name
 }
 
 module "api" {
