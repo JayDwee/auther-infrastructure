@@ -55,6 +55,8 @@ resource "aws_lambda_function" "lambda_function" {
   function_name = "auther-${var.deployment_env}-lambda-function"
   role          = aws_iam_role.lambda_role.arn
   handler       = "main"
+  s3_bucket     = var.s3_bucket_name
+  s3_key        = "auther.zip"
 
   runtime = "provided.al2023"
 
