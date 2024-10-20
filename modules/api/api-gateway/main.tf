@@ -58,7 +58,7 @@ resource "aws_api_gateway_integration" "get_jwks_integration" {
   http_method = aws_api_gateway_method.get_jwks.http_method
   integration_http_method = aws_api_gateway_method.get_jwks.http_method
   type        = "AWS"
-  uri         = "arn:aws:apigateway:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:s3/${var.s3_bucket_name}/.well-known/jwks.json"
+  uri         = "arn:aws:apigateway:${data.aws_region.current.name}:s3:path/${var.s3_bucket_name}/.well-known/jwks.json"
   credentials = aws_iam_role.s3access.arn
 }
 
