@@ -142,9 +142,12 @@ resource "aws_api_gateway_deployment" "default" {
       aws_api_gateway_resource.well_known.id,
       aws_api_gateway_resource.jwks.id,
       aws_api_gateway_method.get_jwks.id,
+      aws_api_gateway_method_response.get_jwks_response_200.id,
       aws_api_gateway_integration.get_jwks_integration.id,
+      aws_api_gateway_integration_response.get_jwks_integration_response.id,
       aws_api_gateway_resource.default.id,
       aws_api_gateway_method.default.id,
+      aws_api_gateway_method_response.default_response_200.id,
       aws_api_gateway_integration.default.id,
     ]))
   }

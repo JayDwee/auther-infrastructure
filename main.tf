@@ -21,7 +21,6 @@ terraform {
 # Configure the AWS Provider
 provider "aws" {}
 
-
 module "s3" {
   source = "./modules/data/s3"
   deployment_env = var.deployment_env
@@ -30,6 +29,8 @@ module "s3" {
 module "lambda" {
   source         = "./modules/compute/lambda"
   deployment_env = var.deployment_env
+  domain_name = var.domain_name
+  s3_bucket_name = module.s3.s3_bucket_name
 }
 
 module "api" {
@@ -39,4 +40,9 @@ module "api" {
   s3_bucket_name = module.s3.s3_bucket_name
   lambda_function_invoke_arn = module.lambda.lambda_function_invoke_arn
   lambda_function_name = module.lambda.lambda_function_name
+}
+
+module "dynamodb" {
+  source = "./modules/data/dynamodb"
+  deployment_env = var.deployment_env
 }

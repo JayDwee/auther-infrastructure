@@ -72,6 +72,8 @@ resource "aws_lambda_function" "lambda_function" {
   environment {
     variables = {
       API_GATEWAY_BASE_PATH = "/default"
+      ISSUER = var.domain_name
+      S3_BUCKET = var.s3_bucket_name
     }
   }
 }
