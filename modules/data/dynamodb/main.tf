@@ -5,6 +5,11 @@ resource "aws_dynamodb_table" "authorization_server" {
   write_capacity = 1
   hash_key       = "id"
 
+  attribute {
+    name = "id"
+    type = "S"
+  }
+
   tags = {
     Name        = "auther_${var.deployment_env}_authorization_server"
     Environment = var.deployment_env
