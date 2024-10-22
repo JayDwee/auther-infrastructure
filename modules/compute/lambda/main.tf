@@ -24,6 +24,11 @@ resource "aws_iam_role_policy_attachment" "s3_role_attach" {
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
 }
 
+resource "aws_iam_role_policy_attachment" "dynamodb_role_attach" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+}
+
 data "aws_iam_policy_document" "cloudwatch_readwrite" {
   statement {
     effect = "Allow"
