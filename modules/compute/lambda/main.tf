@@ -40,7 +40,7 @@ data "aws_iam_policy_document" "cloudwatch_readwrite" {
     effect = "Allow"
     actions = ["logs:CreateLogStream", "logs:PutLogEvents",]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:auther-${var.deployment_env}-lambda-execution"
+      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:/aws/lambda/auther-${var.deployment_env}-lambda-execution"
     ]
   }
 }
