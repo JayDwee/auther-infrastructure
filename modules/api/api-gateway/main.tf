@@ -11,28 +11,31 @@ resource "aws_api_gateway_resource" "well_known" {
   path_part   = ".well-known"
 }
 
-resource "aws_api_gateway_resource" "jwks" {
+resource "aws_api_gateway_resource" "well_known_object" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_resource.well_known.id
-  path_part   = "jwks.json"
+  path_part   = "{object}"
 }
 
-resource "aws_api_gateway_method" "get_jwks" {
+resource "aws_api_gateway_method" "get_well_known" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.jwks.id
+  resource_id   = aws_api_gateway_resource.well_known_object.id
   authorization = "NONE"
   http_method   = "GET"
 }
 
-resource "aws_api_gateway_method_response" "get_jwks_response_200" {
+resource "aws_api_gateway_method_response" "get_well_known_response_200" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.jwks.id
-  http_method = aws_api_gateway_method.get_jwks.http_method
+  resource_id = aws_api_gateway_resource.well_known_object.id
+  http_method = aws_api_gateway_method.get_well_known.http_method
   status_code = "200"
+}
 
-  response_models = {
-    "application/json" = "Empty"
-  }
+resource "aws_api_gateway_method_response" "get_well_known_response_404" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.well_known_object.id
+  http_method = aws_api_gateway_method.get_well_known.http_method
+  status_code = "404"
 }
 
 data "aws_iam_policy_document" "assume_role" {
@@ -63,22 +66,37 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_push_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
 }
 
-resource "aws_api_gateway_integration" "get_jwks_integration" {
+resource "aws_api_gateway_integration" "get_well_known_integration" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.jwks.id
-  http_method = aws_api_gateway_method.get_jwks.http_method
-  integration_http_method = aws_api_gateway_method.get_jwks.http_method
+  resource_id = aws_api_gateway_resource.well_known_object.id
+  http_method = aws_api_gateway_method.get_well_known.http_method
+  integration_http_method = aws_api_gateway_method.get_well_known.http_method
+  request_parameters = {
+    integration.request.path.client : "context.domainPrefix"
+  }
   type        = "AWS"
-  uri         = "arn:aws:apigateway:${data.aws_region.current.name}:s3:path/${var.s3_bucket_name}/.well-known/jwks.json"
+  uri         = "arn:aws:apigateway:${data.aws_region.current.name}:s3:path/${var.s3_bucket_name}/{client}/.well-known/{object}"
   credentials = aws_iam_role.s3access.arn
 }
 
-resource "aws_api_gateway_integration_response" "get_jwks_integration_response" {
+resource "aws_api_gateway_integration_response" "get_well_known_integration_response_200" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.jwks.id
-  http_method = aws_api_gateway_method.get_jwks.http_method
+  resource_id = aws_api_gateway_resource.well_known_object.id
+  http_method = aws_api_gateway_method.get_well_known.http_method
   status_code = "200"
-  depends_on = [aws_api_gateway_integration.get_jwks_integration]
+  depends_on = [aws_api_gateway_integration.get_well_known_integration]
+
+  response_templates = {
+    "application/json" = ""
+  }
+}
+
+resource "aws_api_gateway_integration_response" "get_well_known_integration_response_404" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = aws_api_gateway_resource.well_known_object.id
+  http_method = aws_api_gateway_method.get_well_known.http_method
+  status_code = "404"
+  depends_on = [aws_api_gateway_integration.get_well_known_integration]
 
   response_templates = {
     "application/json" = ""
@@ -140,11 +158,13 @@ resource "aws_api_gateway_deployment" "default" {
     #       It will stabilize to only change when resources change afterwards.
     redeployment = sha1(jsonencode([
       aws_api_gateway_resource.well_known.id,
-      aws_api_gateway_resource.jwks.id,
-      aws_api_gateway_method.get_jwks.id,
-      aws_api_gateway_method_response.get_jwks_response_200.id,
-      aws_api_gateway_integration.get_jwks_integration.id,
-      aws_api_gateway_integration_response.get_jwks_integration_response.id,
+      aws_api_gateway_resource.well_known_object.id,
+      aws_api_gateway_method.get_well_known.id,
+      aws_api_gateway_method_response.get_well_known_response_200.id,
+      aws_api_gateway_method_response.get_well_known_response_404.id,
+      aws_api_gateway_integration.get_well_known_integration.id,
+      aws_api_gateway_integration_response.get_well_known_integration_response_200.id,
+      aws_api_gateway_integration_response.get_well_known_integration_response_404.id,
       aws_api_gateway_resource.default.id,
       aws_api_gateway_method.default.id,
       aws_api_gateway_method_response.default_response_200.id,
