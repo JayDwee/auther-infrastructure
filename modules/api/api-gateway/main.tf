@@ -97,6 +97,7 @@ resource "aws_api_gateway_integration_response" "get_well_known_integration_resp
   http_method = aws_api_gateway_method.get_well_known.http_method
   status_code = "404"
   depends_on = [aws_api_gateway_integration.get_well_known_integration]
+  selection_pattern = "404"
 
   response_templates = {
     "application/json" = ""
