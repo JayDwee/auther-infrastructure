@@ -22,6 +22,10 @@ resource "aws_api_gateway_method" "get_well_known" {
   resource_id   = aws_api_gateway_resource.well_known_object.id
   authorization = "NONE"
   http_method   = "GET"
+
+  request_parameters = {
+    "method.request.path.object" = true
+  }
 }
 
 resource "aws_api_gateway_method_response" "get_well_known_response_200" {
