@@ -1,5 +1,5 @@
-resource "aws_dynamodb_table" "authorization_server" {
-  name           = "auther_${var.deployment_env}_authorization_server"
+resource "aws_dynamodb_table" "applications" {
+  name           = "auther_${var.deployment_env}_applications"
   billing_mode   = "PROVISIONED"
   read_capacity  = 1
   write_capacity = 1
@@ -11,7 +11,7 @@ resource "aws_dynamodb_table" "authorization_server" {
   }
 
   tags = {
-    Name        = "auther_${var.deployment_env}_authorization_server"
+    Name        = "auther_${var.deployment_env}_applications"
     Environment = var.deployment_env
   }
 }
