@@ -80,7 +80,7 @@ resource "aws_api_gateway_integration" "get_well_known_integration" {
     "integration.request.path.object" = "method.request.path.object"
   }
   type        = "AWS"
-  uri         = "arn:aws:apigateway:${data.aws_region.current.name}:s3:path/${var.s3_bucket_name}/app/{app_id}/.well-known/{object}"
+  uri         = "arn:aws:apigateway:${data.aws_region.current.name}:s3:path/${var.s3_bucket_name}/applications/{app_id}/.well-known/{object}"
   credentials = aws_iam_role.s3access.arn
 }
 
