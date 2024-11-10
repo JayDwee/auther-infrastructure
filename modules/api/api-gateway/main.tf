@@ -160,11 +160,14 @@ resource "aws_api_gateway_resource" "api" {
 }
 
 resource "aws_api_gateway_resource" "lambda_proxy" {
-  for_each = toset([aws_api_gateway_resource.oauth2.id, aws_api_gateway_resource.api.id])
+  for_each = {
+      for key, value in [aws_api_gateway_resource.oauth2, aws_api_gateway_resource.api] : value.path_part => value.id
+    }
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = each.value
   path_part   = "{proxy+}"
 }
+
 
 resource "aws_api_gateway_method" "lambda_proxy" {
   for_each      = aws_api_gateway_resource.lambda_proxy
