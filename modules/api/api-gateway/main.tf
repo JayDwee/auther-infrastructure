@@ -90,9 +90,9 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_push_attachment" {
 }
 
 resource "aws_api_gateway_integration" "get_well_known_integration" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.well_known_object.id
-  http_method = "GET"
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.well_known_object.id
+  http_method             = "GET"
   integration_http_method = "GET"
   request_parameters = {
     "integration.request.path.app_id" = "context.domainPrefix"
@@ -104,9 +104,9 @@ resource "aws_api_gateway_integration" "get_well_known_integration" {
 }
 
 resource "aws_api_gateway_integration" "get_default_integration" {
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.default.id
-  http_method = "GET"
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = aws_api_gateway_resource.default.id
+  http_method             = "GET"
   integration_http_method = "GET"
   request_parameters = {
     "integration.request.path.proxy" = "method.request.path.proxy+"
@@ -123,7 +123,9 @@ resource "aws_api_gateway_integration_response" "get_s3_integration_response_200
   resource_id = each.value.id
   http_method = "GET"
   status_code = "200"
-  depends_on = [aws_api_gateway_integration.get_well_known_integration, aws_api_gateway_integration.get_default_integration]
+  depends_on = [
+    aws_api_gateway_integration.get_well_known_integration, aws_api_gateway_integration.get_default_integration
+  ]
 
   response_templates = {
     "application/json" = ""
@@ -136,7 +138,9 @@ resource "aws_api_gateway_integration_response" "get_s3_integration_response_404
   resource_id = each.value.id
   http_method = "GET"
   status_code = "404"
-  depends_on = [aws_api_gateway_integration.get_well_known_integration, aws_api_gateway_integration.get_default_integration]
+  depends_on = [
+    aws_api_gateway_integration.get_well_known_integration, aws_api_gateway_integration.get_default_integration
+  ]
   selection_pattern = "404"
 
   response_templates = {
@@ -152,7 +156,7 @@ resource "aws_api_gateway_resource" "lambda_proxy" {
 }
 
 resource "aws_api_gateway_method" "lambda_proxy" {
-  for_each = aws_api_gateway_resource.lambda_proxy
+  for_each      = aws_api_gateway_resource.lambda_proxy
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = each.value.id
   authorization = "NONE"
@@ -160,7 +164,7 @@ resource "aws_api_gateway_method" "lambda_proxy" {
 }
 
 resource "aws_api_gateway_method_response" "lambda_proxy_response_200" {
-  for_each = aws_api_gateway_resource.lambda_proxy
+  for_each    = aws_api_gateway_resource.lambda_proxy
   rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = each.value.id
   http_method = "ANY"
@@ -172,13 +176,13 @@ resource "aws_api_gateway_method_response" "lambda_proxy_response_200" {
 }
 
 resource "aws_api_gateway_integration" "lambda_proxy" {
-  for_each = aws_api_gateway_resource.lambda_proxy
-  rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = each.value.id
-  http_method = "ANY"
+  for_each                = aws_api_gateway_resource.lambda_proxy
+  rest_api_id             = aws_api_gateway_rest_api.api.id
+  resource_id             = each.value.id
+  http_method             = "ANY"
   integration_http_method = "ANY"
-  type        = "AWS_PROXY"
-  uri         = var.lambda_function_invoke_arn
+  type                    = "AWS_PROXY"
+  uri                     = var.lambda_function_invoke_arn
 }
 
 resource "aws_lambda_permission" "apigw_lambda" {
@@ -207,16 +211,16 @@ resource "aws_api_gateway_deployment" "default" {
       aws_api_gateway_resource.default.id,
       aws_api_gateway_method.get_s3_well_known.id,
       aws_api_gateway_method.get_s3_default.id,
-      aws_api_gateway_method_response.s3_response_200.id,
-      aws_api_gateway_method_response.s3_response_404.id,
+      aws_api_gateway_method_response.s3_response_200[*].id,
+      aws_api_gateway_method_response.s3_response_404[*].id,
       aws_api_gateway_integration.get_well_known_integration.id,
       aws_api_gateway_integration.get_default_integration.id,
-      aws_api_gateway_integration_response.get_s3_integration_response_200.id,
-      aws_api_gateway_integration_response.get_s3_integration_response_404.id,
-      aws_api_gateway_resource.lambda_proxy.id,
-      aws_api_gateway_method.lambda_proxy.id,
-      aws_api_gateway_method_response.lambda_proxy_response_200.id,
-      aws_api_gateway_integration.lambda_proxy.id,
+      aws_api_gateway_integration_response.get_s3_integration_response_200[*].id,
+      aws_api_gateway_integration_response.get_s3_integration_response_404[*].id,
+      aws_api_gateway_resource.lambda_proxy[*].id,
+      aws_api_gateway_method.lambda_proxy[*].id,
+      aws_api_gateway_method_response.lambda_proxy_response_200[*].id,
+      aws_api_gateway_integration.lambda_proxy[*].id,
     ]))
   }
 
