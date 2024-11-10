@@ -156,17 +156,17 @@ resource "aws_api_gateway_resource" "lambda_proxy" {
 }
 
 resource "aws_api_gateway_method" "lambda_proxy" {
-  for_each      = aws_api_gateway_resource.lambda_proxy[*].id
+  for_each      = aws_api_gateway_resource.lambda_proxy
   rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = each.value
+  resource_id   = each.value.id
   authorization = "NONE"
   http_method   = "ANY"
 }
 
 resource "aws_api_gateway_method_response" "lambda_proxy_response_200" {
-  for_each    = aws_api_gateway_resource.lambda_proxy[*].id
+  for_each    = aws_api_gateway_resource.lambda_proxy
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = each.value
+  resource_id = each.value.id
   http_method = "ANY"
   status_code = "200"
 
@@ -176,9 +176,9 @@ resource "aws_api_gateway_method_response" "lambda_proxy_response_200" {
 }
 
 resource "aws_api_gateway_integration" "lambda_proxy" {
-  for_each                = aws_api_gateway_resource.lambda_proxy[*].id
+  for_each                = aws_api_gateway_resource.lambda_proxy
   rest_api_id             = aws_api_gateway_rest_api.api.id
-  resource_id             = each.value
+  resource_id             = each.value.id
   http_method             = "ANY"
   integration_http_method = "ANY"
   type                    = "AWS_PROXY"
