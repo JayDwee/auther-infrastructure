@@ -46,17 +46,17 @@ resource "aws_api_gateway_method" "get_s3_default" {
 }
 
 resource "aws_api_gateway_method_response" "s3_response_200" {
-  for_each = toset([aws_api_gateway_resource.well_known_object, aws_api_gateway_resource.default])
+  for_each = toset([aws_api_gateway_resource.well_known_object.id, aws_api_gateway_resource.default.id])
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = each.value.id
+  resource_id = each.value
   http_method = "GET"
   status_code = "200"
 }
 
 resource "aws_api_gateway_method_response" "s3_response_404" {
-  for_each = toset([aws_api_gateway_resource.well_known_object, aws_api_gateway_resource.default])
+  for_each = toset([aws_api_gateway_resource.well_known_object.id, aws_api_gateway_resource.default.id])
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = each.value.id
+  resource_id = each.value
   http_method = "GET"
   status_code = "404"
 }
@@ -118,9 +118,9 @@ resource "aws_api_gateway_integration" "get_default_integration" {
 
 
 resource "aws_api_gateway_integration_response" "get_s3_integration_response_200" {
-  for_each = toset([aws_api_gateway_resource.well_known_object, aws_api_gateway_resource.default])
+  for_each = toset([aws_api_gateway_resource.well_known_object.id, aws_api_gateway_resource.default.id])
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = each.value.id
+  resource_id = each.value
   http_method = "GET"
   status_code = "200"
   depends_on = [
@@ -133,9 +133,9 @@ resource "aws_api_gateway_integration_response" "get_s3_integration_response_200
 }
 
 resource "aws_api_gateway_integration_response" "get_s3_integration_response_404" {
-  for_each = toset([aws_api_gateway_resource.well_known_object, aws_api_gateway_resource.default])
+  for_each = toset([aws_api_gateway_resource.well_known_object.id, aws_api_gateway_resource.default.id])
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = each.value.id
+  resource_id = each.value
   http_method = "GET"
   status_code = "404"
   depends_on = [
@@ -156,17 +156,17 @@ resource "aws_api_gateway_resource" "lambda_proxy" {
 }
 
 resource "aws_api_gateway_method" "lambda_proxy" {
-  for_each      = aws_api_gateway_resource.lambda_proxy
+  for_each      = aws_api_gateway_resource.lambda_proxy[*].id
   rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = each.value.id
+  resource_id   = each.value
   authorization = "NONE"
   http_method   = "ANY"
 }
 
 resource "aws_api_gateway_method_response" "lambda_proxy_response_200" {
-  for_each    = aws_api_gateway_resource.lambda_proxy
+  for_each    = aws_api_gateway_resource.lambda_proxy[*].id
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = each.value.id
+  resource_id = each.value
   http_method = "ANY"
   status_code = "200"
 
@@ -176,9 +176,9 @@ resource "aws_api_gateway_method_response" "lambda_proxy_response_200" {
 }
 
 resource "aws_api_gateway_integration" "lambda_proxy" {
-  for_each                = aws_api_gateway_resource.lambda_proxy
+  for_each                = aws_api_gateway_resource.lambda_proxy[*].id
   rest_api_id             = aws_api_gateway_rest_api.api.id
-  resource_id             = each.value.id
+  resource_id             = each.value
   http_method             = "ANY"
   integration_http_method = "ANY"
   type                    = "AWS_PROXY"
