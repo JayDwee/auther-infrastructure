@@ -17,7 +17,13 @@ resource "aws_api_gateway_resource" "well_known_object" {
   path_part   = "{object}"
 }
 
-resource "aws_api_gateway_method" "get_well_known" {
+resource "aws_api_gateway_resource" "default" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "{proxy+}"
+}
+
+resource "aws_api_gateway_method" "get_s3_well_known" {
   rest_api_id   = aws_api_gateway_rest_api.api.id
   resource_id   = aws_api_gateway_resource.well_known_object.id
   authorization = "NONE"
@@ -28,17 +34,30 @@ resource "aws_api_gateway_method" "get_well_known" {
   }
 }
 
-resource "aws_api_gateway_method_response" "get_well_known_response_200" {
+resource "aws_api_gateway_method" "get_s3_default" {
+  rest_api_id   = aws_api_gateway_rest_api.api.id
+  resource_id   = aws_api_gateway_resource.default.id
+  authorization = "NONE"
+  http_method   = "GET"
+
+  request_parameters = {
+    "method.request.path.proxy+" = true
+  }
+}
+
+resource "aws_api_gateway_method_response" "s3_response_200" {
+  for_each = toset([aws_api_gateway_resource.well_known_object, aws_api_gateway_resource.default])
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.well_known_object.id
-  http_method = aws_api_gateway_method.get_well_known.http_method
+  resource_id = each.value.id
+  http_method = "GET"
   status_code = "200"
 }
 
-resource "aws_api_gateway_method_response" "get_well_known_response_404" {
+resource "aws_api_gateway_method_response" "s3_response_404" {
+  for_each = toset([aws_api_gateway_resource.well_known_object, aws_api_gateway_resource.default])
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.well_known_object.id
-  http_method = aws_api_gateway_method.get_well_known.http_method
+  resource_id = each.value.id
+  http_method = "GET"
   status_code = "404"
 }
 
@@ -73,8 +92,8 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_push_attachment" {
 resource "aws_api_gateway_integration" "get_well_known_integration" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   resource_id = aws_api_gateway_resource.well_known_object.id
-  http_method = aws_api_gateway_method.get_well_known.http_method
-  integration_http_method = aws_api_gateway_method.get_well_known.http_method
+  http_method = "GET"
+  integration_http_method = "GET"
   request_parameters = {
     "integration.request.path.app_id" = "context.domainPrefix"
     "integration.request.path.object" = "method.request.path.object"
@@ -84,24 +103,40 @@ resource "aws_api_gateway_integration" "get_well_known_integration" {
   credentials = aws_iam_role.s3access.arn
 }
 
-resource "aws_api_gateway_integration_response" "get_well_known_integration_response_200" {
+resource "aws_api_gateway_integration" "get_default_integration" {
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.well_known_object.id
-  http_method = aws_api_gateway_method.get_well_known.http_method
+  resource_id = aws_api_gateway_resource.default.id
+  http_method = "GET"
+  integration_http_method = "GET"
+  request_parameters = {
+    "integration.request.path.proxy" = "method.request.path.proxy+"
+  }
+  type        = "AWS"
+  uri         = "arn:aws:apigateway:${data.aws_region.current.name}:s3:path/${var.s3_bucket_name}/static/{proxy}"
+  credentials = aws_iam_role.s3access.arn
+}
+
+
+resource "aws_api_gateway_integration_response" "get_s3_integration_response_200" {
+  for_each = toset([aws_api_gateway_resource.well_known_object, aws_api_gateway_resource.default])
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  resource_id = each.value.id
+  http_method = "GET"
   status_code = "200"
-  depends_on = [aws_api_gateway_integration.get_well_known_integration]
+  depends_on = [aws_api_gateway_integration.get_well_known_integration, aws_api_gateway_integration.get_default_integration]
 
   response_templates = {
     "application/json" = ""
   }
 }
 
-resource "aws_api_gateway_integration_response" "get_well_known_integration_response_404" {
+resource "aws_api_gateway_integration_response" "get_s3_integration_response_404" {
+  for_each = toset([aws_api_gateway_resource.well_known_object, aws_api_gateway_resource.default])
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.well_known_object.id
-  http_method = aws_api_gateway_method.get_well_known.http_method
+  resource_id = each.value.id
+  http_method = "GET"
   status_code = "404"
-  depends_on = [aws_api_gateway_integration.get_well_known_integration]
+  depends_on = [aws_api_gateway_integration.get_well_known_integration, aws_api_gateway_integration.get_default_integration]
   selection_pattern = "404"
 
   response_templates = {
@@ -109,23 +144,26 @@ resource "aws_api_gateway_integration_response" "get_well_known_integration_resp
   }
 }
 
-resource "aws_api_gateway_resource" "default" {
+resource "aws_api_gateway_resource" "lambda_proxy" {
+  for_each = toset(["oauth2/{proxy+}", "api/{proxy+}"])
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = "{proxy+}"
+  path_part   = each.value
 }
 
-resource "aws_api_gateway_method" "default" {
+resource "aws_api_gateway_method" "lambda_proxy" {
+  for_each = aws_api_gateway_resource.lambda_proxy
   rest_api_id   = aws_api_gateway_rest_api.api.id
-  resource_id   = aws_api_gateway_resource.default.id
+  resource_id   = each.value.id
   authorization = "NONE"
   http_method   = "ANY"
 }
 
-resource "aws_api_gateway_method_response" "default_response_200" {
+resource "aws_api_gateway_method_response" "lambda_proxy_response_200" {
+  for_each = aws_api_gateway_resource.lambda_proxy
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.default.id
-  http_method = aws_api_gateway_method.default.http_method
+  resource_id = each.value.id
+  http_method = "ANY"
   status_code = "200"
 
   response_models = {
@@ -133,11 +171,12 @@ resource "aws_api_gateway_method_response" "default_response_200" {
   }
 }
 
-resource "aws_api_gateway_integration" "default" {
+resource "aws_api_gateway_integration" "lambda_proxy" {
+  for_each = aws_api_gateway_resource.lambda_proxy
   rest_api_id = aws_api_gateway_rest_api.api.id
-  resource_id = aws_api_gateway_resource.default.id
-  http_method = aws_api_gateway_method.default.http_method
-  integration_http_method = aws_api_gateway_method.default.http_method
+  resource_id = each.value.id
+  http_method = "ANY"
+  integration_http_method = "ANY"
   type        = "AWS_PROXY"
   uri         = var.lambda_function_invoke_arn
 }
@@ -148,7 +187,7 @@ resource "aws_lambda_permission" "apigw_lambda" {
   function_name = var.lambda_function_name
   principal     = "apigateway.amazonaws.com"
 
-  source_arn = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.default.http_method}${aws_api_gateway_resource.default.path}"
+  source_arn = "arn:aws:execute-api:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:${aws_api_gateway_rest_api.api.id}/*/${aws_api_gateway_method.lambda_proxy.http_method}${aws_api_gateway_resource.default.path}"
 }
 
 resource "aws_api_gateway_deployment" "default" {
@@ -165,16 +204,19 @@ resource "aws_api_gateway_deployment" "default" {
     redeployment = sha1(jsonencode([
       aws_api_gateway_resource.well_known.id,
       aws_api_gateway_resource.well_known_object.id,
-      aws_api_gateway_method.get_well_known.id,
-      aws_api_gateway_method_response.get_well_known_response_200.id,
-      aws_api_gateway_method_response.get_well_known_response_404.id,
-      aws_api_gateway_integration.get_well_known_integration.id,
-      aws_api_gateway_integration_response.get_well_known_integration_response_200.id,
-      aws_api_gateway_integration_response.get_well_known_integration_response_404.id,
       aws_api_gateway_resource.default.id,
-      aws_api_gateway_method.default.id,
-      aws_api_gateway_method_response.default_response_200.id,
-      aws_api_gateway_integration.default.id,
+      aws_api_gateway_method.get_s3_well_known.id,
+      aws_api_gateway_method.get_s3_default.id,
+      aws_api_gateway_method_response.s3_response_200.id,
+      aws_api_gateway_method_response.s3_response_404.id,
+      aws_api_gateway_integration.get_well_known_integration.id,
+      aws_api_gateway_integration.get_default_integration.id,
+      aws_api_gateway_integration_response.get_s3_integration_response_200.id,
+      aws_api_gateway_integration_response.get_s3_integration_response_404.id,
+      aws_api_gateway_resource.lambda_proxy.id,
+      aws_api_gateway_method.lambda_proxy.id,
+      aws_api_gateway_method_response.lambda_proxy_response_200.id,
+      aws_api_gateway_integration.lambda_proxy.id,
     ]))
   }
 

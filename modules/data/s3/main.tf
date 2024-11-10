@@ -12,3 +12,9 @@ resource "aws_s3_object" "apps_dir" {
   key    = "applications/"
   source = "/dev/null"
 }
+
+resource "aws_s3_object" "static_dir" {
+  bucket = aws_s3_bucket.private_bucket.id
+  key    = "static/"
+  source = "/dev/null"
+}
