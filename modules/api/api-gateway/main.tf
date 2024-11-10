@@ -41,7 +41,7 @@ resource "aws_api_gateway_method" "get_s3_default" {
   http_method   = "GET"
 
   request_parameters = {
-    "method.request.path.proxy+" = true
+    "method.request.path.proxy" = true
   }
 }
 
@@ -109,7 +109,7 @@ resource "aws_api_gateway_integration" "get_default_integration" {
   http_method             = "GET"
   integration_http_method = "GET"
   request_parameters = {
-    "integration.request.path.proxy" = "method.request.path.proxy+"
+    "integration.request.path.proxy" = "method.request.path.proxy"
   }
   type        = "AWS"
   uri         = "arn:aws:apigateway:${data.aws_region.current.name}:s3:path/${var.s3_bucket_name}/static/{proxy}"
@@ -148,11 +148,22 @@ resource "aws_api_gateway_integration_response" "get_s3_integration_response_404
   }
 }
 
-resource "aws_api_gateway_resource" "lambda_proxy" {
-  for_each = toset(["oauth2/{proxy+}", "api/{proxy+}"])
+resource "aws_api_gateway_resource" "oauth2" {
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = aws_api_gateway_rest_api.api.root_resource_id
-  path_part   = each.value
+  path_part   = "oauth2"
+}
+resource "aws_api_gateway_resource" "api" {
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = aws_api_gateway_rest_api.api.root_resource_id
+  path_part   = "api"
+}
+
+resource "aws_api_gateway_resource" "lambda_proxy" {
+  for_each = toset([aws_api_gateway_resource.oauth2.id, aws_api_gateway_resource.api.id])
+  rest_api_id = aws_api_gateway_rest_api.api.id
+  parent_id   = each.value
+  path_part   = "{proxy+}"
 }
 
 resource "aws_api_gateway_method" "lambda_proxy" {
