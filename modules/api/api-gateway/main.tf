@@ -161,8 +161,8 @@ resource "aws_api_gateway_resource" "api" {
 
 resource "aws_api_gateway_resource" "lambda_proxy" {
   for_each = {
-      for key, value in [aws_api_gateway_resource.oauth2, aws_api_gateway_resource.api] : value.path_part => value.id
-    }
+    for key, value in [aws_api_gateway_resource.oauth2, aws_api_gateway_resource.api] : value.path_part => value.id
+  }
   rest_api_id = aws_api_gateway_rest_api.api.id
   parent_id   = each.value
   path_part   = "{proxy+}"
@@ -194,7 +194,7 @@ resource "aws_api_gateway_integration" "lambda_proxy" {
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = each.value.id
   http_method             = "ANY"
-  integration_http_method = "ANY"
+  integration_http_method = "POST"
   type                    = "AWS_PROXY"
   uri                     = var.lambda_function_invoke_arn
 }
