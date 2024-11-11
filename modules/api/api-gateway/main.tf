@@ -90,6 +90,7 @@ resource "aws_iam_role_policy_attachment" "cloudwatch_push_attachment" {
 }
 
 resource "aws_api_gateway_integration" "get_well_known_integration" {
+  depends_on = [aws_api_gateway_method.get_s3_well_known]
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.well_known_object.id
   http_method             = "GET"
@@ -104,6 +105,7 @@ resource "aws_api_gateway_integration" "get_well_known_integration" {
 }
 
 resource "aws_api_gateway_integration" "get_default_integration" {
+  depends_on = [aws_api_gateway_method.get_s3_well_known]
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = aws_api_gateway_resource.default.id
   http_method             = "GET"
@@ -190,6 +192,7 @@ resource "aws_api_gateway_method_response" "lambda_proxy_response_200" {
 }
 
 resource "aws_api_gateway_integration" "lambda_proxy" {
+  depends_on = [aws_api_gateway_method.lambda_proxy]
   for_each                = aws_api_gateway_resource.lambda_proxy
   rest_api_id             = aws_api_gateway_rest_api.api.id
   resource_id             = each.value.id
